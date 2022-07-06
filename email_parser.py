@@ -2,6 +2,8 @@
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
+from dataclasses import dataclass
+from typing import List
 import pickle
 import os.path
 import base64
@@ -11,7 +13,19 @@ from bs4 import BeautifulSoup
 # Define the SCOPES. If modifying it, delete the token.pickle file.
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 
+
+@dataclass
+class Email:
+  sender: str
+  to: List[str]
+  cc: List[str]
+  bcc: List[str]
+  subject: str
+  body: str
+
 def getEmails():
+  emails = []
+
   # Variable creds will store the user access token.
   # If no valid token found, we will create one.
   creds = None
@@ -52,17 +66,14 @@ def getEmails():
   for msg in messages:
     # Get the message from its id
     txt = service.users().messages().get(userId='me', id=msg['id']).execute()
-    print(txt.keys())
-    # break
 
-    # Use try-except to avoid any Errors
     try:
-      # Get value of 'payload' from dictionary 'txt'
       payload = txt['payload']
       headers = payload['headers']
 
       # # Look for Subject and Sender Email in the headers
       for d in headers:
+        print(d['name'])
         if d['name'] == 'Subject':
           subject = d['value']
         if d['name'] == 'From':
@@ -81,13 +92,17 @@ def getEmails():
       
 
       # Printing the subject, sender's email and message
-      print("Subject: ", subject)
-      print("From: ", sender)
-      print("Message: ", body)
+      # print("Subject: ", subject)
+      # print("From: ", sender)
+      # print("Message: ", body)
+      emails.append(Email(sender=sender, to=[], cc=[], bcc=[], subject=subject, body=body))
       print('\n')
     except Exception as e:
       print("Error has occured...")
       print(e)
 
+  return emails
 
-getEmails()
+
+emails = getEmails()
+print("There were this many emails:", len(emails))
